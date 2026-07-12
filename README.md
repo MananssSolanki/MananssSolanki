@@ -12,12 +12,11 @@
 
 ## Manan Solanki
 
-**Flutter Developer · Android Developer · Mobile App Builder**
+**Flutter Developer · Android Developer · Mobile App Builder · Software Engineer**
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-mananSolanki-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/YOUR-LINKEDIN-HANDLE)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-mananSolanki-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](www.linkedin.com/in/manan1911)
 [![GitHub](https://img.shields.io/badge/GitHub-MananssSolanki-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/MananssSolanki)
 [![Email](https://img.shields.io/badge/Email-solankimanan19-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:solankimanan19@gmail.com)
-[![Phone](https://img.shields.io/badge/Call-+91_9714670766-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](tel:+919714670766)
 
 <br>
 
