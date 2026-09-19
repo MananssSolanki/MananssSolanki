@@ -2,26 +2,18 @@
 """
 Scrape real daily contribution counts from GitHub's public, unauthenticated
 contributions endpoint (the same fragment the profile page itself uses) and
-write data/contributions.json with the raw days plus derived stats
-(current streak, longest streak, best day, monthly totals).
+write data/contributions.json with derived stats (current streak, longest
+streak, best day, monthly totals).
 
 No token, no auth, no GraphQL -- just the public HTML GitHub already serves.
-Run daily by .github/workflows/update-profile-art.yml.
 
-IMPORTANT: `days` is a rolling 365-day window, so the raw day list changes
-shape every single day (oldest day drops off, today gets appended) even when
-you haven't made a single new contribution. If we always overwrote the JSON,
-that would produce a real file diff every day -> a no-op "dummy" commit from
-git-auto-commit-action, even on days with zero real activity.
-
-To avoid that, before writing we compare the MEANINGFUL stats (totals,
-streaks, best day, monthly breakdown) against whatever is already on disk.
-If nothing meaningful changed, we skip the write entirely -- the file is left
-untouched, so the workflow's git-auto-commit-action step sees no diff and
-correctly skips the commit. No workflow changes are needed for this; that
-action already only commits when there's an actual diff.
+This version writes ONLY stable, meaningful values. It does not store a
+timestamp, the date range, or the raw 365-day list, because all three change
+every single day purely from the rolling window moving forward -- even on days
+with zero new activity. Keeping them out means that on a quiet day the output
+file is byte-for-byte identical to what's already on disk, git sees no diff,
+and no automatic commit is made.
 """
-import datetime
 import json
 import os
 import re
@@ -33,20 +25,6 @@ from bs4 import BeautifulSoup
 USERNAME = os.environ.get("GH_PROFILE_USER", "MananssSolanki")
 URL = f"https://github.com/users/{USERNAME}/contributions"
 OUT_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "contributions.json")
-
-# Fields that represent GENUINE change (new contributions, streak changes,
-# a new best day, monthly totals moving). Deliberately excludes "generated_at"
-# (always different) and "range"/"days" (shift every day purely from the
-# window rolling forward, independent of any real activity).
-MEANINGFUL_KEYS = (
-    "total_contributions",
-    "active_days",
-    "avg_per_active_day",
-    "current_streak",
-    "longest_streak",
-    "best_day",
-    "monthly",
-)
 
 
 def fetch_days():
@@ -126,8 +104,6 @@ def build_data(days):
 
     return {
         "username": USERNAME,
-        "generated_at": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "range": {"start": days[0]["date"], "end": days[-1]["date"]},
         "total_contributions": total,
         "active_days": active_days,
         "avg_per_active_day": round(total / active_days, 1) if active_days else 0,
@@ -135,37 +111,12 @@ def build_data(days):
         "longest_streak": {"length": long_len, "start": long_start, "end": long_end},
         "best_day": {"date": best["date"], "count": best["count"]},
         "monthly": monthly_list,
-        "days": days,
     }
-
-
-def load_previous():
-    """Return the previously written data, or None if there isn't any / it's unreadable."""
-    if not os.path.exists(OUT_PATH):
-        return None
-    try:
-        with open(OUT_PATH) as f:
-            return json.load(f)
-    except (json.JSONDecodeError, OSError) as e:
-        print(f"could not read previous {OUT_PATH} ({e}) -- treating as no previous data", file=sys.stderr)
-        return None
-
-
-def meaningful_subset(data):
-    return {k: data.get(k) for k in MEANINGFUL_KEYS}
 
 
 if __name__ == "__main__":
     days = fetch_days()
     data = build_data(days)
-
-    previous = load_previous()
-    if previous is not None and meaningful_subset(previous) == meaningful_subset(data):
-        print(
-            "no meaningful change in contribution stats today (only the rolling "
-            "365-day window shifted) -- skipping write so no no-op commit is made"
-        )
-        sys.exit(0)
 
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
     with open(OUT_PATH, "w") as f:
